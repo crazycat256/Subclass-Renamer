@@ -1,3 +1,20 @@
+
+# IntelliJ IDEA Project stuff
+.idea/
+out/
+*.iws
+*.iml
+*___jb_*___
+/target/
+
+# Other Project stuff
+run/
+
+# Gradle
+.gradle/
+gradle/
+build/
+
 # Compiled class file
 *.class
 

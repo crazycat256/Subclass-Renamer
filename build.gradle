@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+def javaFxVersion = '22-ea+16'
+def jarBaseName = 'subclass-renamer'
+
+group = 'fr.crazycat256'
+version = '2.0'
+
+javafx {
+    version = javaFxVersion
+    modules = ['javafx.controls', 'javafx.media']
+}
+
+application {
+    mainClass = 'software.coley.recaf.Main'
+}
+
+jar {
+    archiveBaseName = jarBaseName
+}
+
+// Run Recaf in a dev environment with the plugin
+// Note that this is a workaround, if you have a better way to do this, please let me know
+run {
+    // Set the Recaf directory to the run directory
+    environment 'RECAF', './run'
+
+    // Build the plugin before running Recaf
+    dependsOn build
+
+    // Copy the plugin to the run directory
+    doFirst {
+        copy {
+            from 'build/libs'
+            into 'run/plugins'
+            include jarBaseName + '-' + project.version + '.jar'
+        }
+    }
+    // And then run Recaf
+}
+
+// Additional repositories
+repositories {
+    mavenCentral() // Official repo
+    maven { url 'https://jitpack.io' } // 3rd party repo, analyzer
+    maven { url 'https://maven.minecraftforge.net/' } // 3rd party repo, Forge
+    maven { url 'https://github.com/Col-E/jdk-tools-mirror/raw/master/repository/' } // 3rd party repo, mirror
+}
+
+// Dependencies
+dependencies {
+    compileOnly ('com.github.Col-E:Recaf:dev4-SNAPSHOT') {
+        exclude group: 'com.android.tools'
+    }
+
+    implementation 'org.kordamp.ikonli:ikonli-carbonicons-pack:12.3.1'
+    implementation 'io.github.mkpaz:atlantafx-base:2.0.1'
+}
+
+// Additional configurations
+configurations {
+    runtimeClasspath {
+        extendsFrom compileClasspath
+    }
+}
+
+
