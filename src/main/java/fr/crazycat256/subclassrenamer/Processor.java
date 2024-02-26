@@ -5,7 +5,8 @@ import org.slf4j.Logger;
 import software.coley.recaf.analytics.logging.Logging;
 import software.coley.recaf.info.ClassInfo;
 import software.coley.recaf.info.JvmClassInfo;
-import software.coley.recaf.path.ClassPathNode;
+import software.coley.recaf.services.inheritance.InheritanceGraph;
+import software.coley.recaf.services.inheritance.InheritanceVertex;
 import software.coley.recaf.services.mapping.IntermediateMappings;
 import software.coley.recaf.services.mapping.MappingApplier;
 import software.coley.recaf.services.mapping.MappingResults;
@@ -18,9 +19,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static fr.crazycat256.subclassrenamer.SubclassRenamer.INDEX_PLACEHOLDER;
-import static fr.crazycat256.subclassrenamer.SubclassRenamer.NAME_PLACEHOLDER;
-
 /**
  * Main handler for creating new names and applying them.
  * Copied from Recaf's <a href="https://github.com/Recaf-Plugins/Auto-Renamer/blob/master/src/main/java/me/coley/recaf/plugin/rename/Processor.java">AutoRename Plugin</a>
@@ -32,6 +30,7 @@ public class Processor {
     private final Map<String, String> mappings = new ConcurrentHashMap<>();
     private final SubclassRenamer plugin;
     private final Instance<MappingApplier> applierProvider;
+    private final InheritanceGraph inheritanceGraph;
     private final Workspace workspace;
     private final ClassInfo info;
     private final boolean recursive;
@@ -51,9 +50,10 @@ public class Processor {
      * @param recursive
      *      Whether to rename subclasses of subclasses.
      */
-    public Processor(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, Workspace workspace, ClassInfo info, String pattern, boolean recursive) {
+    public Processor(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, InheritanceGraph inheritanceGraph, Workspace workspace, ClassInfo info, String pattern, boolean recursive) {
         this.plugin = plugin;
         this.applierProvider = applierProvider;
+        this.inheritanceGraph = inheritanceGraph;
         this.workspace = workspace;
         this.info = info;
         this.recursive = recursive;
@@ -183,7 +183,6 @@ public class Processor {
      * @return {@code true} if the class inherits from the parent.
      */
     private boolean isSubclassOf(ClassInfo info, ClassInfo parent) {
-
         // Check if the class extends the parent
         if (info.getSuperName() != null && info.getSuperName().equals(parent.getName())) {
             return true;
@@ -197,22 +196,18 @@ public class Processor {
         if (recursive) {
 
             // Visit super class
-            if (info.getSuperName() != null) {
-                ClassPathNode superClass = workspace.findClass(info.getSuperName());
-                if (superClass != null) {
-                    ClassInfo superClassInfo = superClass.getValue();
-                    if (isSubclassOf(superClassInfo, parent)) {
-                        return true;
-                    }
+            InheritanceVertex superVertex = inheritanceGraph.getVertex(info.getSuperName());
+            if (superVertex != null) {
+                if (isSubclassOf(superVertex.getValue(), parent)) {
+                    return true;
                 }
             }
 
             // Visit interfaces
             for (String iface : info.getInterfaces()) {
-                ClassPathNode interfaceClass = workspace.findClass(iface);
-                if (interfaceClass == null) continue;
-                ClassInfo interfaceClassInfo = interfaceClass.getValue();
-                if (isSubclassOf(interfaceClassInfo, parent)) {
+                InheritanceVertex interfaceVertex = inheritanceGraph.getVertex(iface);
+                if (interfaceVertex == null) continue;
+                if (isSubclassOf(interfaceVertex.getValue(), parent)) {
                     return true;
                 }
             }
