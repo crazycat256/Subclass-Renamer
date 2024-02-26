@@ -24,8 +24,9 @@ jar {
 }
 
 // Run Recaf in a dev environment with the plugin
-// Note that this is a workaround, if you have a better way to do this, please let me know
 run {
+    description = 'Run Recaf with the plugin'
+
     // Set the Recaf directory to the run directory
     environment 'RECAF', './run'
 
@@ -34,6 +35,7 @@ run {
 
     // Copy the plugin to the run directory
     doFirst {
+        delete 'run/plugins'
         copy {
             from 'build/libs'
             into 'run/plugins'
