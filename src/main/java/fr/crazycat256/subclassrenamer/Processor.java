@@ -196,10 +196,12 @@ public class Processor {
         if (recursive) {
 
             // Visit super class
-            InheritanceVertex superVertex = inheritanceGraph.getVertex(info.getSuperName());
-            if (superVertex != null) {
-                if (isSubclassOf(superVertex.getValue(), parent)) {
-                    return true;
+            if (info.getSuperName() != null && !info.getSuperName().equals("java/lang/Object")) {
+                InheritanceVertex superVertex = inheritanceGraph.getVertex(info.getSuperName());
+                if (superVertex != null) {
+                    if (isSubclassOf(superVertex.getValue(), parent)) {
+                        return true;
+                    }
                 }
             }
 
