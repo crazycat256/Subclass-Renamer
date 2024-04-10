@@ -5,11 +5,10 @@ import fr.crazycat256.subclassrenamer.SubclassRenamer;
 import jakarta.enterprise.inject.Instance;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import software.coley.recaf.analytics.logging.Logging;
@@ -44,6 +43,7 @@ public class RenameSubclassesPopup extends RecafStage {
     private final JvmClassInfo info;
     private final Label output = new Label();
     private final TextField patternInput = new TextField();
+    private final TextField regexInput = new TextField();
     private final CheckBox recursiveBox = new CheckBox();
 
     /**
@@ -72,23 +72,28 @@ public class RenameSubclassesPopup extends RecafStage {
         String packageName = info.getName().contains("/") ? info.getName().substring(0, info.getName().lastIndexOf("/")) : "";
         String simpleClassName = info.getName().contains("/") ? info.getName().substring(info.getName().lastIndexOf("/") + 1) : info.getName();
         patternInput.setPromptText("Pattern");
-        patternInput.setText(packageName.isEmpty() ? simpleClassName : packageName + "/" + simpleClassName + "_" + INDEX_PLACEHOLDER);
-        patternInput.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                accept();
-            } else if (e.getCode() == KeyCode.ESCAPE) {
-                hide();
-            }
-        });
+        patternInput.setText((packageName.isEmpty() ? simpleClassName : packageName + "/" + simpleClassName) + "_" + INDEX_PLACEHOLDER);
+        patternInput.setOnKeyPressed(this::onKeyPressed);
 
         Label infoLabel = new Label(String.format("Use " + NAME_PLACEHOLDER + " for the original name and " + INDEX_PLACEHOLDER + " for an auto-incremented index"));
         HBox infoContainer = new HBox(infoLabel);
+        infoContainer.setPadding(new Insets(0, 0, 7, 0));
 
         recursiveBox.setText("Recursively");
-        recursiveBox.setTooltip(new Tooltip("Rename subclasses of subclasses, and so on."));
+        recursiveBox.setTooltip(new Tooltip("Rename subclasses of subclasses, and so on"));
         recursiveBox.setSelected(true);
         HBox recursiveBoxContainer = new HBox(recursiveBox);
         recursiveBoxContainer.setPadding(new Insets(0, 0, 7, 0));
+
+        HBox.setHgrow(regexInput, Priority.ALWAYS);
+        Label regexLabel = new Label("Regex Filter: ");
+        regexLabel.setTooltip(new Tooltip("Only rename classes that match the regex, leave empty to rename all subclasses"));
+        regexInput.setText("");
+        regexInput.setPromptText("^com/example/package.*$");
+        regexInput.setOnKeyPressed(this::onKeyPressed);
+        HBox regexContainer = new HBox(regexLabel, regexInput);
+        regexContainer.setPadding(new Insets(0, 0, 7, 0));
+        regexContainer.setAlignment(Pos.CENTER_LEFT);
 
         Button accept = new ActionButton(new FontIconView(CHECKMARK, Color.LAWNGREEN), this::accept);
         Button cancel = new ActionButton(new FontIconView(CLOSE, Color.RED), this::hide);
@@ -99,34 +104,49 @@ public class RenameSubclassesPopup extends RecafStage {
         buttons.setSpacing(10);
         buttons.setPadding(new Insets(10, 0, 10, 0));
         buttons.setAlignment(Pos.CENTER_RIGHT);
-        VBox layout = new VBox(title, patternInput, infoContainer, recursiveBoxContainer, buttons, new Group(output));
+
+        output.setTextFill(new Color(229f/255, 62f/255, 52f/255, 1f));
+
+        StackPane outputAndButtons = new StackPane();
+        outputAndButtons.getChildren().addAll(output, buttons);
+
+        VBox layout = new VBox(title, patternInput, infoContainer, recursiveBoxContainer, regexContainer, outputAndButtons);
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setPadding(new Insets(10));
-        setScene(new RecafScene(layout, 600, 170));
+        setScene(new RecafScene(layout, 600, 213));
 
+    }
+
+    /**
+     * Handle key press events.
+     */
+    private void onKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.ENTER) {
+            accept();
+        } else if (event.getCode() == KeyCode.ESCAPE) {
+            hide();
+        }
     }
 
     /**
      * Accept the input and begin renaming.
      */
     private void accept() {
-        logger.info("Renaming subclasses of {} with pattern '{}'", info.getName(), patternInput.getText());
+        logger.info("Renaming subclasses of {} with pattern '{}' if matching regex '{}'", info.getName(), patternInput.getText(), regexInput.getText());
         String pattern = patternInput.getText();
         if (pattern.isEmpty()) {
             output.setText("Pattern cannot be empty.");
             return;
         }
         if (!pattern.contains(NAME_PLACEHOLDER) && !pattern.contains(INDEX_PLACEHOLDER)) {
-            output.setText("Pattern must contain either" + NAME_PLACEHOLDER + " or " + INDEX_PLACEHOLDER);
+            output.setText("Pattern must contain either " + NAME_PLACEHOLDER + " or " + INDEX_PLACEHOLDER);
             return;
         }
 
-        Processor processor = new Processor(plugin, applierProvider, inheritanceGraph, workspace, info, pattern, recursiveBox.isSelected());
+        Processor processor = new Processor(plugin, applierProvider, inheritanceGraph, workspace, info, pattern, regexInput.getText(), recursiveBox.isSelected());
 
         processor.analyze(workspace.getPrimaryResource().getJvmClassBundle().entrySet());
         processor.apply();
         hide();
     }
-
-
 }

@@ -15,19 +15,15 @@ import static fr.crazycat256.subclassrenamer.SubclassRenamer.NAME_PLACEHOLDER;
  */
 public class NameGenerator {
 	private final Workspace workspace;
-	private final ClassInfo superClass;
 	private final String pattern;
 	private int idx = 0;
 
 	/**
-	 * @param superClass
-	 * 		The super class to base names off of.
 	 * @param pattern
 	 * 		The pattern to use for naming.
 	 */
-	public NameGenerator(Workspace workspace, ClassInfo superClass, String pattern) {
+	public NameGenerator(Workspace workspace, String pattern) {
 		this.workspace = workspace;
-		this.superClass = superClass;
 		this.pattern = pattern;
 	}
 

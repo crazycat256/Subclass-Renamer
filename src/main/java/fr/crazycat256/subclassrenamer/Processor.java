@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 /**
  * Main handler for creating new names and applying them.
@@ -31,8 +32,8 @@ public class Processor {
     private final SubclassRenamer plugin;
     private final Instance<MappingApplier> applierProvider;
     private final InheritanceGraph inheritanceGraph;
-    private final Workspace workspace;
     private final ClassInfo info;
+    private final Pattern pattern;
     private final boolean recursive;
     private final NameGenerator generator;
 
@@ -50,15 +51,15 @@ public class Processor {
      * @param recursive
      *      Whether to rename subclasses of subclasses.
      */
-    public Processor(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, InheritanceGraph inheritanceGraph, Workspace workspace, ClassInfo info, String pattern, boolean recursive) {
+    public Processor(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, InheritanceGraph inheritanceGraph, Workspace workspace, ClassInfo info, String pattern, String regex, boolean recursive) {
         this.plugin = plugin;
         this.applierProvider = applierProvider;
         this.inheritanceGraph = inheritanceGraph;
-        this.workspace = workspace;
         this.info = info;
+        this.pattern = regex.isEmpty() ? null : Pattern.compile(regex);
         this.recursive = recursive;
 
-        generator = new NameGenerator(workspace, info, pattern);
+        generator = new NameGenerator(workspace, pattern);
     }
 
     /**
@@ -101,6 +102,11 @@ public class Processor {
 
             // Skip if the class is not a subclass of the target class
             if (!isSubclassOf(classInfo, info)) {
+                return;
+            }
+
+            // Skip if the class does not match the regex
+            if (pattern != null && !pattern.matcher(oldClassName).matches()) {
                 return;
             }
 
