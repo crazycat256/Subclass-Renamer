@@ -13,7 +13,6 @@ import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import software.coley.recaf.analytics.logging.Logging;
 import software.coley.recaf.info.JvmClassInfo;
-import software.coley.recaf.services.inheritance.InheritanceGraph;
 import software.coley.recaf.services.mapping.MappingApplier;
 import software.coley.recaf.ui.control.ActionButton;
 import software.coley.recaf.ui.control.FontIconView;
@@ -38,7 +37,6 @@ public class RenameSubclassesPopup extends RecafStage {
     private static final Logger logger = Logging.get(RenameSubclassesPopup.class);
     private final SubclassRenamer plugin;
     private final Instance<MappingApplier> applierProvider;
-    private final InheritanceGraph inheritanceGraph;
     private final Workspace workspace;
     private final JvmClassInfo info;
     private final Label output = new Label();
@@ -57,10 +55,9 @@ public class RenameSubclassesPopup extends RecafStage {
      * @param info
      *      Class to rename.
      */
-    public RenameSubclassesPopup(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, InheritanceGraph inheritanceGraph, Workspace workspace, JvmClassInfo info) {
+    public RenameSubclassesPopup(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, Workspace workspace, JvmClassInfo info) {
         this.plugin = plugin;
         this.applierProvider = applierProvider;
-        this.inheritanceGraph = inheritanceGraph;
         this.workspace = workspace;
         this.info = info;
 
@@ -143,7 +140,7 @@ public class RenameSubclassesPopup extends RecafStage {
             return;
         }
 
-        Processor processor = new Processor(plugin, applierProvider, inheritanceGraph, workspace, info, pattern, regexInput.getText(), recursiveBox.isSelected());
+        Processor processor = new Processor(plugin, applierProvider, workspace, info, pattern, regexInput.getText(), recursiveBox.isSelected());
 
         processor.analyze(workspace.getPrimaryResource().getJvmClassBundle().entrySet());
         processor.apply();

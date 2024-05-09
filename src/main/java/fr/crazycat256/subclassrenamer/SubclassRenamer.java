@@ -11,7 +11,6 @@ import software.coley.recaf.analytics.logging.Logging;
 import software.coley.recaf.info.JvmClassInfo;
 import software.coley.recaf.plugin.*;
 import software.coley.recaf.services.cell.context.*;
-import software.coley.recaf.services.inheritance.InheritanceGraph;
 import software.coley.recaf.services.mapping.MappingApplier;
 import software.coley.recaf.util.Menus;
 import software.coley.recaf.workspace.model.Workspace;
@@ -36,7 +35,6 @@ public class SubclassRenamer implements Plugin {
     public final int renameTimeout = 30; // TODO: Add config for this
     private final ContextMenuProviderService menuProviderService;
     private final Instance<MappingApplier> applierProvider;
-    private final InheritanceGraph inheritanceGraph;
     private final ClassContextMenuAdapter adapter = new ClassContextMenuAdapter() {
         @Override
         public void adaptJvmClassMenu(@Nonnull ContextMenu menu, @Nonnull ContextSource source, @Nonnull Workspace workspace, @Nonnull WorkspaceResource resource, @Nonnull JvmClassBundle bundle, @Nonnull JvmClassInfo info) {
@@ -47,10 +45,9 @@ public class SubclassRenamer implements Plugin {
     };
 
     @Inject
-    public SubclassRenamer(ContextMenuProviderService menuProviderService, Instance<MappingApplier> applierProvider, InheritanceGraph inheritanceGraph) {
+    public SubclassRenamer(ContextMenuProviderService menuProviderService, Instance<MappingApplier> applierProvider) {
         this.menuProviderService = menuProviderService;
         this.applierProvider = applierProvider;
-        this.inheritanceGraph = inheritanceGraph;
     }
 
     @Override
@@ -73,6 +70,6 @@ public class SubclassRenamer implements Plugin {
      * 		Class to rename.
      */
     private void displayPopup(Workspace workspace, JvmClassInfo info) {
-        new RenameSubclassesPopup(this, applierProvider, inheritanceGraph, workspace, info).show();
+        new RenameSubclassesPopup(this, applierProvider, workspace, info).show();
     }
 }

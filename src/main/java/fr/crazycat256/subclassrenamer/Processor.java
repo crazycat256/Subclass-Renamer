@@ -5,8 +5,7 @@ import org.slf4j.Logger;
 import software.coley.recaf.analytics.logging.Logging;
 import software.coley.recaf.info.ClassInfo;
 import software.coley.recaf.info.JvmClassInfo;
-import software.coley.recaf.services.inheritance.InheritanceGraph;
-import software.coley.recaf.services.inheritance.InheritanceVertex;
+import software.coley.recaf.path.ClassPathNode;
 import software.coley.recaf.services.mapping.IntermediateMappings;
 import software.coley.recaf.services.mapping.MappingApplier;
 import software.coley.recaf.services.mapping.MappingResults;
@@ -31,7 +30,7 @@ public class Processor {
     private final Map<String, String> mappings = new ConcurrentHashMap<>();
     private final SubclassRenamer plugin;
     private final Instance<MappingApplier> applierProvider;
-    private final InheritanceGraph inheritanceGraph;
+    private final Workspace workspace;
     private final ClassInfo info;
     private final Pattern pattern;
     private final boolean recursive;
@@ -51,10 +50,10 @@ public class Processor {
      * @param recursive
      *      Whether to rename subclasses of subclasses.
      */
-    public Processor(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, InheritanceGraph inheritanceGraph, Workspace workspace, ClassInfo info, String pattern, String regex, boolean recursive) {
+    public Processor(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, Workspace workspace, ClassInfo info, String pattern, String regex, boolean recursive) {
         this.plugin = plugin;
         this.applierProvider = applierProvider;
-        this.inheritanceGraph = inheritanceGraph;
+        this.workspace = workspace;
         this.info = info;
         this.pattern = regex.isEmpty() ? null : Pattern.compile(regex);
         this.recursive = recursive;
@@ -189,7 +188,6 @@ public class Processor {
      * @return {@code true} if the class inherits from the parent.
      */
     private boolean isSubclassOf(ClassInfo info, ClassInfo parent) {
-        // Check if the class extends the parent
         if (info.getSuperName() != null && info.getSuperName().equals(parent.getName())) {
             return true;
         }
@@ -203,9 +201,10 @@ public class Processor {
 
             // Visit super class
             if (info.getSuperName() != null && !info.getSuperName().equals("java/lang/Object")) {
-                InheritanceVertex superVertex = inheritanceGraph.getVertex(info.getSuperName());
-                if (superVertex != null) {
-                    if (isSubclassOf(superVertex.getValue(), parent)) {
+                ClassPathNode superClass = workspace.findClass(info.getSuperName());
+                if (superClass != null) {
+                    ClassInfo superClassInfo = superClass.getValue();
+                    if (isSubclassOf(superClassInfo, parent)) {
                         return true;
                     }
                 }
@@ -213,9 +212,10 @@ public class Processor {
 
             // Visit interfaces
             for (String iface : info.getInterfaces()) {
-                InheritanceVertex interfaceVertex = inheritanceGraph.getVertex(iface);
-                if (interfaceVertex == null) continue;
-                if (isSubclassOf(interfaceVertex.getValue(), parent)) {
+                ClassPathNode interfaceClass = workspace.findClass(iface);
+                if (interfaceClass == null) continue;
+                ClassInfo interfaceClassInfo = interfaceClass.getValue();
+                if (isSubclassOf(interfaceClassInfo, parent)) {
                     return true;
                 }
             }
