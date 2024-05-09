@@ -4,6 +4,12 @@ plugins {
     id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(22)
+    }
+}
+
 def javaFxVersion = '22-ea+16'
 def jarBaseName = 'subclass-renamer'
 
@@ -62,6 +68,9 @@ dependencies {
     implementation 'org.kordamp.ikonli:ikonli-carbonicons-pack:12.3.1'
     implementation 'io.github.mkpaz:atlantafx-base:2.0.1'
     implementation 'com.github.Col-E:tiwulfx-dock:1.2.3'
+    implementation 'jakarta.enterprise:jakarta.enterprise.cdi-api:3.0.0-M1'
+    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0-M1'
+    implementation 'org.slf4j:slf4j-api:2.0.12'
 }
 
 // Additional configurations
