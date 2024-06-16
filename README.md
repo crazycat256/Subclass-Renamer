@@ -17,7 +17,7 @@ This will generate the file `build/libs/subclass-renamer-{VERSION}.jar`. To add 
 
 1. Navigate to the `plugins` folder.
     - Windows: `%APPDATA%/Recaf/plugins`
-    - Linux: `$HOME/Recaf/plugins`
+    - Linux: `$HOME/.config/Recaf/plugins`
 2. Copy your plugin jar into this folder
 3. Run Recaf to verify your plugin loads.
 
