@@ -61,14 +61,14 @@ repositories {
 
 // Dependencies
 dependencies {
-    compileOnly ('com.github.Col-E:Recaf:dev4-SNAPSHOT') {
+    compileOnly ('com.github.Col-E:Recaf:master-SNAPSHOT') {
         exclude group: 'com.android.tools'
     }
 
     implementation 'org.kordamp.ikonli:ikonli-carbonicons-pack:12.3.1'
     implementation 'io.github.mkpaz:atlantafx-base:2.0.1'
     implementation 'com.github.Col-E:tiwulfx-dock:1.2.3'
-    implementation 'jakarta.enterprise:jakarta.enterprise.cdi-api:3.0.0-M1'
+    implementation 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0.RC1'
     implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0-M1'
     implementation 'org.slf4j:slf4j-api:2.0.12'
 }

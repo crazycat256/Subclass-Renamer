@@ -27,7 +27,13 @@ import software.coley.recaf.services.cell.context.ContextSource;
  * @author crazycat256
  */
 @Dependent
-@PluginInformation(name = "Subclass Renamer", version = "2.2", author = "crazycat256", description = "Automatically renames each subclass of a class.")
+@PluginInformation(
+    id = "subclass-renamer",
+    name = "Subclass Renamer",
+    version = "2.2",
+    author = "crazycat256",
+    description = "Automatically renames each subclass of a class."
+)
 public class SubclassRenamer implements Plugin {
     private static final Logger logger = Logging.get(SubclassRenamer.class);
     public static final String NAME_PLACEHOLDER = "{name}";
