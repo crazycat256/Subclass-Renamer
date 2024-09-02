@@ -41,14 +41,7 @@ public class SubclassRenamer implements Plugin {
     public final int renameTimeout = 30; // TODO: Add config for this
     private final ContextMenuProviderService menuProviderService;
     private final Instance<MappingApplier> applierProvider;
-    private final ClassContextMenuAdapter adapter = new ClassContextMenuAdapter() {
-        @Override
-        public void adaptJvmClassMenu(@Nonnull ContextMenu menu, @Nonnull ContextSource source, @Nonnull Workspace workspace, @Nonnull WorkspaceResource resource, @Nonnull JvmClassBundle bundle, @Nonnull JvmClassInfo info) {
-        menu.getItems().add(Menus.actionLiteral("Rename subclasses", CarbonIcons.PARENT_CHILD, () -> {
-            displayPopup(workspace, info);
-        }));
-        }
-    };
+    private final ClassContextMenuAdapter adapter = new SubclassRenamerClassContextMenuAdapter();
 
     @Inject
     public SubclassRenamer(ContextMenuProviderService menuProviderService, Instance<MappingApplier> applierProvider) {
@@ -77,5 +70,19 @@ public class SubclassRenamer implements Plugin {
      */
     private void displayPopup(Workspace workspace, JvmClassInfo info) {
         new RenameSubclassesPopup(this, applierProvider, workspace, info).show();
+    }
+
+
+    /**
+     * Adapter for adding the "Rename subclasses" action to the class context menu.
+     * This can't be an anonymous class because it needs to be public.
+     */
+    public class SubclassRenamerClassContextMenuAdapter implements ClassContextMenuAdapter {
+        @Override
+        public void adaptJvmClassMenu(@Nonnull ContextMenu menu, @Nonnull ContextSource source, @Nonnull Workspace workspace, @Nonnull WorkspaceResource resource, @Nonnull JvmClassBundle bundle, @Nonnull JvmClassInfo info) {
+            menu.getItems().add(Menus.actionLiteral("Rename subclasses", CarbonIcons.PARENT_CHILD, () -> {
+                displayPopup(workspace, info);
+            }));
+        }
     }
 }
