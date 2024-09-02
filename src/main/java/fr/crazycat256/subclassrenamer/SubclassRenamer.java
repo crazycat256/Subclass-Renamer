@@ -30,7 +30,7 @@ import software.coley.recaf.services.cell.context.ContextSource;
 @PluginInformation(
     id = "subclass-renamer",
     name = "Subclass Renamer",
-    version = "2.2",
+    version = "2.3",
     author = "crazycat256",
     description = "Automatically renames each subclass of a class."
 )

@@ -14,7 +14,7 @@ def javaFxVersion = '22-ea+16'
 def jarBaseName = 'subclass-renamer'
 
 group = 'fr.crazycat256'
-version = '2.2'
+version = '2.3'
 
 javafx {
     version = javaFxVersion
