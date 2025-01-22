@@ -1,83 +1,130 @@
 plugins {
     id 'java'
-    id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'top.hendrixshen.replace-token'  version '1.1.2'
 }
 
+group = 'fr.crazycat256'
+version = '2.3'
+
+ext {
+    // The version of Recaf we're building against.
+    //
+    // For Recaf versions:
+    //  - Releases: https://mvnrepository.com/artifact/software.coley/recaf-core
+    //  - Snapshots: https://jitpack.io/#Col-E/Recaf  (see commits tab)
+    recafVersion = '3025f7238a'
+    recafSnapshots = true
+
+    // This should point to the full name of the class that 'implements Plugin'
+    pluginMainClass = 'fr.crazycat256.subclassrenamer.SubclassRenamer'
+
+    // These variables will change what plugin information is declared
+    pluginName = 'Subclass Renamer'
+    pluginDesc = 'Enables automatic renaming of all subclasses of a class'
+    pluginId = group + '.' + project.name
+}
+
+// Recaf requires JDK 22 or higher.
+// We'll use this toolchain declaration to force the version of Java this project builds with.
+// If your main JDK is 22+ you won't need any additional setup.
+//
+// See: https://docs.gradle.org/current/userguide/toolchains.html
+//   gradlew -q javaToolchains - see the list of detected toolchains.
+//
+// If you wish to keep your main JDK as something else I suggest you create a "toolchains.xml"
+// in your '${user.home}/.m2/' directory. You can see an example over at:
+//  https://maven.apache.org/guides/mini/guide-using-toolchains.html
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(22)
     }
 }
 
-def javaFxVersion = '22-ea+16'
-def jarBaseName = 'subclass-renamer'
-
-group = 'fr.crazycat256'
-version = '2.3'
-
-javafx {
-    version = javaFxVersion
-    modules = ['javafx.controls', 'javafx.media']
-}
-
-application {
-    mainClass = 'software.coley.recaf.Main'
-}
-
-jar {
-    archiveBaseName = jarBaseName
-}
-
-// Run Recaf in a dev environment with the plugin
-run {
-    description = 'Run Recaf with the plugin'
-
-    // Set the Recaf directory to the run directory
-    environment 'RECAF', './run'
-
-    // Build the plugin before running Recaf
-    dependsOn build
-
-    // Copy the plugin to the run directory
-    doFirst {
-        delete 'run/plugins'
-        copy {
-            from 'build/libs'
-            into 'run/plugins'
-            include jarBaseName + '-' + project.version + '.jar'
-        }
-    }
-    // And then run Recaf
-}
-
-// Additional repositories
 repositories {
-    mavenCentral() // Official repo
-    maven { url 'https://jitpack.io' } // 3rd party repo, analyzer
-    maven { url 'https://maven.minecraftforge.net/' } // 3rd party repo, Forge
-    maven { url 'https://github.com/Col-E/jdk-tools-mirror/raw/master/repository/' } // 3rd party repo, mirror
+    mavenLocal()
+    mavenCentral()
+
+    // For Recaf snapshot builds a few transitive dependencies
+    maven { url 'https://jitpack.io' }
 }
 
-// Dependencies
+configurations.configureEach {
+    // Annoying annotations that replace desired tab completions.
+    exclude group: 'org.checkerframework'
+
+    // Other annotations we don't use which are transitive deps of deps
+    exclude group: 'com.google.code.findbugs'
+    exclude group: 'com.google.errorprone'
+    exclude group: 'com.google.j2objc'
+    exclude group: 'org.jetbrains', module: 'annotations'
+
+    // Transitive dependencies that we want to ignore (less to download, less repositories to connect to)
+    exclude group: 'com.android.tools'
+
+    // Used by ANTLR runtime, has a lot of IL8N related files which we don't use.
+    // Removing this dependency doesn't inhibit the behavior of libraries using the
+    // runtime in practice though.
+    exclude group: 'com.ibm.icu'
+}
+
 dependencies {
-    compileOnly ('com.github.Col-E:Recaf:master-SNAPSHOT') {
-        exclude group: 'com.android.tools'
+    if (recafSnapshots) {
+        implementation "com.github.Col-E.Recaf:recaf-core:${recafVersion}"
+        implementation "com.github.Col-E.Recaf:recaf-ui:${recafVersion}"
+    } else {
+        implementation "software.coley:recaf-core:${recafVersion}"
+        implementation "software.coley:recaf-ui:${recafVersion}"
     }
 
     implementation 'org.kordamp.ikonli:ikonli-carbonicons-pack:12.3.1'
     implementation 'io.github.mkpaz:atlantafx-base:2.0.1'
     implementation 'com.github.Col-E:tiwulfx-dock:1.2.3'
-    implementation 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0.RC1'
-    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0-M1'
-    implementation 'org.slf4j:slf4j-api:2.0.12'
+
+    testImplementation platform('org.junit:junit-bom:5.11.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
-// Additional configurations
-configurations {
-    runtimeClasspath {
-        extendsFrom compileClasspath
+test {
+    useJUnitPlatform()
+}
+
+javafx {
+    version = '22.0.1'
+    modules = [ 'javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.media' ]
+}
+
+// The replace-token plugin synchronizes our @PluginInformation(version) with our project.version
+replaceToken {
+    targetSourceSets.set([sourceSets.main])
+    replace("##ID##", project.ext.pluginId)
+    replace("##NAME##", project.ext.pluginName)
+    replace("##DESC##", project.ext.pluginDesc)
+    replace("##VERSION##", project.version)
+}
+
+// This dirty hack of a task creates the service entry in the output jar.
+// Recaf expects the service entry to be the full name of the class that implements the 'Plugin' interface
+tasks.register('setupServiceEntry') {
+    outputs.dir(temporaryDir)
+
+    doFirst {
+        new File(temporaryDir, "META-INF/services").mkdirs()
+        new File(temporaryDir, "META-INF/services/software.coley.recaf.plugin.Plugin").text = project.ext.pluginMainClass
     }
 }
+jar.from(setupServiceEntry)
 
+// Because all of the necessary dependencies to run Recaf are on the classpath we can make
+// a simple task to run Recaf. We'll have it build our plugin and load it up on startup.
+tasks.register('runRecaf', JavaExec) {
+    // Need to build the plugin jar first
+    dependsOn 'build'
 
+    // Setup the classpath for the task
+    classpath sourceSets.main.runtimeClasspath
+    mainClass = "software.coley.recaf.Main"
+
+    // Add our plugin
+    args("-r", "build/libs")
+}

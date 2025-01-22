@@ -1,6 +1,5 @@
 package fr.crazycat256.subclassrenamer;
 
-import jakarta.enterprise.inject.Instance;
 import org.slf4j.Logger;
 import software.coley.recaf.analytics.logging.Logging;
 import software.coley.recaf.info.ClassInfo;
@@ -8,6 +7,7 @@ import software.coley.recaf.info.JvmClassInfo;
 import software.coley.recaf.path.ClassPathNode;
 import software.coley.recaf.services.mapping.IntermediateMappings;
 import software.coley.recaf.services.mapping.MappingApplier;
+import software.coley.recaf.services.mapping.MappingApplierService;
 import software.coley.recaf.services.mapping.MappingResults;
 import software.coley.recaf.workspace.model.Workspace;
 
@@ -28,8 +28,7 @@ import java.util.regex.Pattern;
 public class Processor {
     private static final Logger logger = Logging.get(Processor.class);
     private final Map<String, String> mappings = new ConcurrentHashMap<>();
-    private final SubclassRenamer plugin;
-    private final Instance<MappingApplier> applierProvider;
+    private final MappingApplierService applierService;
     private final Workspace workspace;
     private final ClassInfo info;
     private final Pattern pattern;
@@ -37,22 +36,21 @@ public class Processor {
     private final NameGenerator generator;
 
     /**
-     * @param plugin
-     * 		Plugin with config values.
-     * @param applierProvider
-     *      Provider for mapping applier.
+     * @param applierService
+     *      Provider for mapping applierService.
      * @param workspace
      *      Workspace to pull classes from.
      * @param info
      *      Class to rename.
      * @param pattern
      *      Pattern to use for naming.
+     * @param regex
+     *      Regex to use for filtering.
      * @param recursive
      *      Whether to rename subclasses of subclasses.
      */
-    public Processor(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, Workspace workspace, ClassInfo info, String pattern, String regex, boolean recursive) {
-        this.plugin = plugin;
-        this.applierProvider = applierProvider;
+    public Processor(MappingApplierService applierService, Workspace workspace, ClassInfo info, String pattern, String regex, boolean recursive) {
+        this.applierService = applierService;
         this.workspace = workspace;
         this.info = info;
         this.pattern = regex.isEmpty() ? null : Pattern.compile(regex);
@@ -134,8 +132,13 @@ public class Processor {
             mappings.addClass(entry.getKey(), entry.getValue());
         }
 
-        // Apply mappings
-        MappingApplier applier = applierProvider.get();
+        MappingApplier applier = applierService.inCurrentWorkspace();
+        if (applier == null) {
+            logger.error("Failed to get MappingApplierService");
+            return;
+        }
+
+        // Apply the mappings
         MappingResults results = applier.applyToPrimaryResource(mappings);
         results.apply();
 
@@ -164,7 +167,7 @@ public class Processor {
             }
             task.accept(service);
             service.shutdown();
-            service.awaitTermination(plugin.renameTimeout, TimeUnit.SECONDS);
+            service.awaitTermination(SubclassRenamer.RENAME_TIMEOUT, TimeUnit.SECONDS);
             logger.info("SubclassRenamer Processing: Task '{}' completed in {}ms", phaseName, (System.currentTimeMillis() - start));
         } catch (Throwable t) {
             logger.info("Failed processor phase '{}', reason: {}", phaseName, t.getMessage(), t);

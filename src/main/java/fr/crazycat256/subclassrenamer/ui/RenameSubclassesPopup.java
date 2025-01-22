@@ -1,8 +1,6 @@
 package fr.crazycat256.subclassrenamer.ui;
 
 import fr.crazycat256.subclassrenamer.Processor;
-import fr.crazycat256.subclassrenamer.SubclassRenamer;
-import jakarta.enterprise.inject.Instance;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -13,7 +11,7 @@ import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import software.coley.recaf.analytics.logging.Logging;
 import software.coley.recaf.info.JvmClassInfo;
-import software.coley.recaf.services.mapping.MappingApplier;
+import software.coley.recaf.services.mapping.MappingApplierService;
 import software.coley.recaf.ui.control.ActionButton;
 import software.coley.recaf.ui.control.FontIconView;
 import software.coley.recaf.ui.window.RecafScene;
@@ -35,8 +33,7 @@ import static org.kordamp.ikonli.carbonicons.CarbonIcons.CLOSE;
 public class RenameSubclassesPopup extends RecafStage {
 
     private static final Logger logger = Logging.get(RenameSubclassesPopup.class);
-    private final SubclassRenamer plugin;
-    private final Instance<MappingApplier> applierProvider;
+    private final MappingApplierService applierService;
     private final Workspace workspace;
     private final JvmClassInfo info;
     private final Label output = new Label();
@@ -46,18 +43,15 @@ public class RenameSubclassesPopup extends RecafStage {
 
     /**
      *
-     * @param plugin
-     * 		Plugin with config values.
-     * @param applierProvider
-     * 		Provider for mapping applier.
+     * @param applierService
+     * 		Mappings applier service.
      * @param workspace
      * 		Workspace to pull classes from.
      * @param info
      *      Class to rename.
      */
-    public RenameSubclassesPopup(SubclassRenamer plugin, Instance<MappingApplier> applierProvider, Workspace workspace, JvmClassInfo info) {
-        this.plugin = plugin;
-        this.applierProvider = applierProvider;
+    public RenameSubclassesPopup(MappingApplierService applierService, Workspace workspace, JvmClassInfo info) {
+        this.applierService = applierService;
         this.workspace = workspace;
         this.info = info;
 
@@ -140,7 +134,7 @@ public class RenameSubclassesPopup extends RecafStage {
             return;
         }
 
-        Processor processor = new Processor(plugin, applierProvider, workspace, info, pattern, regexInput.getText(), recursiveBox.isSelected());
+        Processor processor = new Processor(applierService, workspace, info, pattern, regexInput.getText(), recursiveBox.isSelected());
 
         processor.analyze(workspace.getPrimaryResource().getJvmClassBundle().entrySet());
         processor.apply();
