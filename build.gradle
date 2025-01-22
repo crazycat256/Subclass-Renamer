@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'fr.crazycat256'
-version = '2.3'
+version = '2.4'
 
 ext {
     // The version of Recaf we're building against.
