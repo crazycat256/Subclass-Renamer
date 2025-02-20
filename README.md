@@ -12,7 +12,7 @@ Note: this plugin is not yet stable and may have problems or errors. Please repo
 
 ## Building & modification
 
-Once you've downloaded or cloned the repository, you can compile with `mvn clean package`.
+Once you've downloaded or cloned the repository, you can compile with `./gradlew build`.
 This will generate the file `build/libs/subclass-renamer-{VERSION}.jar`. To add your plugin to Recaf:
 
 1. Navigate to the `plugins` folder.
